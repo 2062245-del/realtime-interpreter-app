@@ -1,0 +1,45 @@
+name: 안드로이드 앱(APK) 만들기
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 소스 압축 풀기
+        run: |
+          if [ -f src.zip ]; then unzip -o -q src.zip; fi
+          mkdir -p app/src/main/assets
+          # 앱 안의 오프라인용 화면을 최신 웹 버전으로 맞추기
+          curl -fsSL "https://realtime-interpreter-kr.netlify.app/" -o /tmp/web.html && grep -q AndroidBridge /tmp/web.html && cp /tmp/web.html app/src/main/assets/index.html || { echo "웹 최신본 받기 실패"; exit 1; }
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: APK 빌드
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: 파일 이름 정리
+        run: cp app/build/outputs/apk/debug/app-debug.apk realtime-interpreter.apk
+
+      - name: 다운로드 링크 만들기 (Releases)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: 실시간 통역기 앱 v${{ github.run_number }}
+          make_latest: true
+          files: realtime-interpreter.apk
