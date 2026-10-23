@@ -17,6 +17,7 @@ jobs:
       - name: 소스 압축 풀기
         run: |
           if [ -f src.zip ]; then unzip -o -q src.zip; fi
+          if [ -f patch.py ]; then python3 patch.py; fi
           mkdir -p app/src/main/assets
           # 앱 안의 오프라인용 화면을 최신 웹 버전으로 맞추기
           curl -fsSL "https://realtime-interpreter-kr.netlify.app/" -o /tmp/web.html && grep -q AndroidBridge /tmp/web.html && cp /tmp/web.html app/src/main/assets/index.html || { echo "웹 최신본 받기 실패"; exit 1; }
